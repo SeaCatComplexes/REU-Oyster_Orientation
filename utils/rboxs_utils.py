@@ -116,7 +116,7 @@ def rbox2poly(obboxes):
         center, w, h, theta = obboxes[:, :2], obboxes[:, 2:3], obboxes[:, 3:4], obboxes[:, 4:5]
         theta_arr = []
         for t in theta:
-            theta_val = t.numpy()
+            theta_val = t.cpu().numpy()
             theta_arr.append(theta_val)
         Cos, Sin = torch.cos(theta), torch.sin(theta)
 

@@ -184,7 +184,7 @@ class Annotator:
                     end_xVal = int(center_xVal + (length * math.cos(theta)))
                     end_yVal = int(center_yVal + (length * math.sin(theta) * -1))
 
-                arr_color = [alt_color * (rotation_factor * 2) for alt_color in color]
+                arr_color = [int(alt_color * (rotation_factor * 2)) for alt_color in color]
                 end_point = (end_xVal, end_yVal)
                 cv2.arrowedLine(self.im_cv2, start_point, end_point, arr_color, thickness=self.lw)
   
