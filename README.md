@@ -94,4 +94,4 @@ For information on running either training or inference using this project pleas
   Contact: rudyi@susqu.edu
 ```
 
-python detect.py --weights weights/yolov5nOysters.pt --source /home/teai/gwf_file/REU-Oyster_Orientation/test.jpg --conf-thres 0.3 --device 0
+python detect.py --weights weights/yolov5nOysters.pt --source /home/teai/gwf_file/REU-Oyster_Orientation/test.jpg --conf-thres 0.3 --device 0 --highlight-small

@@ -19,7 +19,6 @@ from pathlib import Path
 
 #For use in converting from radians to degrees
 import math
-import numpy as np
 
 import cv2
 import torch
@@ -66,7 +65,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        highlight_small=True,  # highlight small area detections with blue color
         ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -159,33 +157,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string  
 
-                # Calculate areas for small detection filtering
-                areas = []
-                for *poly, conf, cls in det:
-                    # Convert poly to numpy array for area calculation
-                    poly_np = torch.tensor(poly).cpu().numpy().reshape(-1, 2)
-                    # Calculate polygon area using shoelace formula
-                    area = 0.5 * abs(sum(poly_np[i,0] * poly_np[(i+1)%len(poly_np),1] - poly_np[(i+1)%len(poly_np),0] * poly_np[i,1] for i in range(len(poly_np))))
-                    areas.append(area)
-                
-                # Calculate area threshold (mean - std, or use percentile)
-                if len(areas) > 1:
-                    areas_tensor = torch.tensor(areas)
-                    area_mean = areas_tensor.mean().item()
-                    area_std = areas_tensor.std().item()
-                    area_threshold = max(area_mean - area_std, torch.quantile(areas_tensor, 0.3).item())
-                else:
-                    area_threshold = 0
-
                 # Write results
                 theta_index = 0
-                area_index = 0
                 theta_list.reverse()
                 for *poly, conf, cls in reversed(det):
                     theta_val = theta_list[theta_index]
-                    current_area = areas[-(area_index + 1)]  # Reverse order to match reversed det
                     theta_index += 1
-                    area_index += 1
                     #print('\n', math.degrees(theta_val))
                     if save_txt:  # Write to file
                         # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -197,16 +174,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_img or save_crop or view_img:  # Add poly to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        
-                        # Determine color: blue for small areas, normal color for others
-                        if highlight_small and current_area < area_threshold and len(areas) > 1:
-                            box_color = (255, 0, 0)  # Blue color (BGR format)
-                            label = f'[Small] {label}' if label else '[Small]'
-                        else:
-                            box_color = colors(c, True)
-                        
                         # annotator.box_label(xyxy, label, color=colors(c, True))
-                        annotator.poly_label(poly, theta_val, label, color=box_color)
+                        annotator.poly_label(poly, theta_val, label, color=colors(c, True))
                         if save_crop: # Yolov5-obb doesn't support it yet
                             # save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
                             pass 
@@ -294,7 +263,6 @@ def parse_opt():
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--highlight-small', action='store_true', help='highlight small area detections with blue color')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)
